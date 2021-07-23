@@ -7,6 +7,6 @@ def batch_grad(learning_rate, inputs, targets, predictions, parameters):
     diff_tensor = torch.subtract(predictions, targets)
     for idx, theta in enumerate(parameters):
         mul_tensor = torch.matmul(diff_tensor, inputs[:, idx:idx + 1])
-        updated_param.append(theta - (learning_rate * torch.sum(mul_tensor).item()))
+        updated_param.append(theta - (learning_rate * (torch.sum(mul_tensor).item() / len(predictions))))
 
     return torch.FloatTensor(updated_param)
