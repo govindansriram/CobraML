@@ -6,17 +6,17 @@ ____
 
 # CobraML: Easy ML for the aspiring Data Scientist
 ## What is it?
-____
+
 **CobraML** is a python library built on the pytorch framework that hosts a plethora of ML algorithms which can harness both the GPU and CPU.
 
 ## Progress
 
-----
+
 **CobraML** is in it's extremely early stages with only a few algorithms ready for production, and is thus not ready for release.
 
 ## How to contribute?
 
----
+
 **CobraML** is currently not looking for any extra contributors, but in the near future contributions will surely be welcome.
 
 
