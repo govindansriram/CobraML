@@ -20,8 +20,26 @@ class LinearRegression:
         prediction = torch.matmul(self.__feature_list, torch.transpose(self.__parameters, 0, 1))
         return prediction
 
+    def normal_eqt(self):
+        mat_1 = torch.matmul(torch.transpose(self.__feature_list, 0, 1), self.__feature_list)
+
+        target = torch.unsqueeze(self.__target_list, dim=0)
+
+        mat_2 = torch.matmul(torch.transpose(self.__feature_list, 0, 1), torch.transpose(target, 0, 1))
+
+        return torch.matmul(torch.inverse(mat_1), mat_2)
+
     def get_parameters(self):
         return self.__parameters
+
+    def get_target_list(self):
+        return self.__target_list
+
+    def get_feature_list(self):
+        return self.__feature_list
+
+    def get_learning_rate(self):
+        return
 
     def train_model(self):
         predictions = torch.squeeze(torch.transpose(self.__get_predictions(), 0, 1), dim=0)
