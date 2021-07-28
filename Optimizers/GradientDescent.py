@@ -1,21 +1,32 @@
-import torch
+import numpy as np
 
 
-def batch_grad(learning_rate, inputs, targets, predictions, parameters):
-    updated_param = []
+def batch_grad(learning_rate: float,
+               inputs: np.ndarray,
+               targets: np.ndarray,
+               predictions: np.ndarray,
+               parameters: np.ndarray):
 
-    diff_tensor = torch.subtract(predictions, targets)
+    updated_param = np.zeros(parameters.shape, dtype=np.float64)
+
+    diff_arr = np.subtract(predictions, targets)
+
     for idx, theta in enumerate(parameters):
-        mul_tensor = torch.matmul(diff_tensor, inputs[:, idx:idx + 1])
-        updated_param.append(theta - (learning_rate * (torch.sum(mul_tensor).item() / len(predictions))))
+        mul_arr = np.matmul(diff_arr, inputs[:, idx:idx + 1])
+        updated_param[idx] += theta - learning_rate / predictions.shape[0] * np.sum(mul_arr, dtype=np.float64)
 
-    return torch.FloatTensor(updated_param)
+    return updated_param
 
 
-def stochastic_grad(learning_rate, x_input, y_output, predictions, theta_params):
+def stochastic_grad(learning_rate: float,
+                    x_input: np.ndarray,
+                    y_output: float,
+                    prediction: float,
+                    parameters: np.ndarray):
 
-    updated_param = [
-        theta - (learning_rate * (predictions - y_output) * x_input[idx]) for idx, theta in enumerate(theta_params)
-    ]
+    updated_param = np.zeros(parameters.shape, dtype=np.float64)
 
-    return torch.FloatTensor(updated_param)
+    for idx in range(parameters.shape[0]):
+        updated_param[idx] += parameters[idx] - (learning_rate * (prediction - y_output) * x_input[idx])
+
+    return updated_param

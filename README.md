@@ -4,10 +4,20 @@
 
 ____
 
-# CobraML: Easy ML for the aspiring Data Scientist
+# CobraML: Completely Customizable
 ## What is it?
 
-**CobraML** is a python library built on the pytorch framework that hosts a plethora of ML algorithms which can harness both the GPU and CPU.
+**CobraML** is a python library built on both numpy and numba. 
+- Unlike other ML libraries **CobraML** gives 
+the user full control when designing their model pipeline, 
+  from the cost function to the optimizer
+everything is in the users hand!
+  
+- **CobraML** is designed to be extremely fast thanks to numba implementations, 
+  CobraML will also eventually have gpu support!
+  
+- **CobraML** is completely open source and in the future we are looking 
+forward to community collaboration and input!
 
 ## Progress
 
