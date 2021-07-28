@@ -1,9 +1,5 @@
-import torch
 import numpy as np
 
-
-# def squared_error(pred_tensor, output_tensor):
-#     return torch.sum(torch.square(torch.subtract(pred_tensor, output_tensor))).item() * (1 / (2 * len(pred_tensor)))
 
 def squared_error(pred_tensor: np.ndarray,
                   output_tensor: np.ndarray):
