@@ -4,7 +4,7 @@
 
 ____
 
-# CobraML: Completely Customizable
+# CobraML: ML for everyone
 ## What is it?
 
 **CobraML** is a python library built on both numpy and numba. 
