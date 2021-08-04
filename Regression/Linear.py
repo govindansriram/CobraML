@@ -25,9 +25,14 @@ class LinearRegression:
             self.__parameters = np.zeros((1, self.__feature_list.shape[1]),
                                          dtype=np.float64)
 
-    def get_predictions(self):
+    def get_predictions(self,
+                        new_feat=False,
+                        feat_arr=None):
+
+        curr_arr = self.__feature_list if not new_feat else make_feature_list(feat_arr)
+
         return np.squeeze(
-            np.matmul(self.__feature_list, self.__parameters.T),
+            np.matmul(curr_arr, self.__parameters.T),
             axis=1)
 
     def normal_eqt(self):

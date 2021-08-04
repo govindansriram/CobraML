@@ -16,5 +16,7 @@ class LogisticRegression(LinearRegression):
                  param_arr_rand=True):
         super().__init__(feature_arr, target_arr, param_arr_rand)
 
-    def get_predictions(self) -> np.ndarray:
-        return sigmoid(super(LogisticRegression, self).get_predictions())
+    def get_predictions(self,
+                        new_feat=False,
+                        feat_arr=None) -> np.ndarray:
+        return sigmoid(super(LogisticRegression, self).get_predictions(new_feat=new_feat, feat_arr=feat_arr))
