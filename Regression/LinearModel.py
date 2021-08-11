@@ -2,8 +2,9 @@ import torch
 from torch import nn
 
 
-def add_extra_input(x_input,
-                    device):
+def add_extra_input(x_input: torch.FloatTensor,
+                    device: str) -> torch.Tensor:
+
     ones_arr = torch.ones((x_input.shape[0], 1),
                           dtype=torch.float64,
                           device=device)
@@ -32,6 +33,6 @@ class LinearRegression(nn.Module):
         return self.__parameters
 
     def forward(self,
-                x_input):
+                x_input: torch.FloatTensor) -> torch.Tensor:
         return torch.matmul(add_extra_input(x_input, self.__device),
                             self.__parameters.T)
