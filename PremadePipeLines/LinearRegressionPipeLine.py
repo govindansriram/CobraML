@@ -28,9 +28,13 @@ class LinearRegressionDataset(Dataset):
 class LinearRegressionModel:
 
     def __init__(self,
-                 feature_tensor: torch.Tensor,
-                 target_tensor: torch.Tensor,
+                 train_feature_tensor: torch.Tensor,
+                 train_target_tensor: torch.Tensor,
+                 test_feature_tensor: torch.Tensor,
+                 test_target_tensor: torch.Tensor,
                  batch_size: int,
+                 learning_rate,
+                 momentum,
                  randomize=False,
                  device_name="cpu"):
 
@@ -39,44 +43,57 @@ class LinearRegressionModel:
 
         self.__device = device_name
 
-        if len(feature_tensor.size()) > 2 or len(feature_tensor.size()) < 2:
+        if len(train_feature_tensor.size()) > 2 or len(train_target_tensor.size()) < 2:
             raise Exception("tensor shape should be 2-d")
 
-        feature_tensor, target_tensor = feature_tensor.type(torch.DoubleTensor), target_tensor.type(torch.DoubleTensor)
+        if len(test_feature_tensor.size()) > 2 or len(test_target_tensor.size()) < 2:
+            raise Exception("tensor shape should be 2-d")
 
-        dataset = LinearRegressionDataset(feature_tensor,
-                                          target_tensor)
+        feature_tensor_train = train_feature_tensor.type(torch.DoubleTensor)
+        target_tensor_train = train_target_tensor.type(torch.DoubleTensor)
 
-        self.__dataloader = DataLoader(dataset,
-                                       batch_size=batch_size,
-                                       shuffle=True)
+        feature_tensor_test = test_feature_tensor.type(torch.DoubleTensor)
+        target_tensor_test = test_target_tensor.type(torch.DoubleTensor)
 
-        self.__model = LinearRegression(feature_tensor.size()[1],
+        dataset_train = LinearRegressionDataset(feature_tensor_train,
+                                                target_tensor_train)
+
+        dataset_test = LinearRegressionDataset(feature_tensor_test,
+                                               target_tensor_test)
+
+        self.__dataloader_train = DataLoader(dataset_train,
+                                             batch_size=batch_size,
+                                             shuffle=True)
+
+        self.__dataloader_test = DataLoader(dataset_test,
+                                            batch_size=batch_size,
+                                            shuffle=True)
+
+        self.__model = LinearRegression(feature_tensor_train.size()[1],
                                         device=device_name,
                                         randomize=randomize).to(self.__device)
+
+        self.__optimizer = optim.SGD([self.__model.get_parameters()],
+                                     lr=learning_rate,
+                                     momentum=momentum)
 
     def predict(self, x_features: torch.Tensor):
         x_features = x_features.type(torch.DoubleTensor)
         x_features = x_features.to(self.__device)
 
         self.__model.eval()
-        return self.__model(x_features)
+        self.__model.get_parameters().eval()
+
+        with torch.no_grad():
+            return self.__model(x_features)
 
     def train_model(self,
-                    epochs,
-                    learning_rate,
-                    momentum,
-                    optim_name="sgd"):
+                    epochs):
+
+        self.__model.train()
+        self.__model.get_parameters().train()
 
         loss_arr = []
-
-        if optim_name == "sgd":
-            optimizer = optim.SGD([self.__model.get_parameters()],
-                                  lr=learning_rate,
-                                  momentum=momentum)
-        else:
-            raise Exception("not a valid optimizer")
-
         loss_fn = nn.MSELoss()
 
         for _ in tqdm(range(epochs),
@@ -86,11 +103,11 @@ class LinearRegressionModel:
 
             epoch_loss = 0
 
-            for batch in tqdm(self.__dataloader,
+            for batch in tqdm(self.__dataloader_train,
                               desc="Training Linear Regression Model per batch",
                               unit="batch",
                               colour="blue"):
-                optimizer.zero_grad()
+                self.__optimizer.zero_grad()
 
                 x_input, y_target = batch
                 x_input = x_input.to(self.__device)
@@ -102,10 +119,34 @@ class LinearRegressionModel:
 
                 loss.backward()
 
-                optimizer.step()
+                self.__optimizer.step()
 
                 epoch_loss += loss.item()
 
-            loss_arr.append(epoch_loss / len(self.__dataloader))
+            loss_arr.append(epoch_loss / len(self.__dataloader_train))
 
         return loss_arr
+
+    def test_model(self):
+        self.__model.eval()
+        self.__model.get_parameters().eval()
+
+        diff_val = 0
+
+        with torch.no_grad():
+            for batch in tqdm(self.__dataloader_test,
+                              desc="Testing Linear Regression Model per batch",
+                              unit="batch",
+                              colour="blue"):
+
+                x_input, y_target = batch
+                x_input = x_input.to(self.__device)
+                y_target = y_target.to(self.__device)
+
+                output = self.__model(x_input)
+
+                abs_tensor = torch.abs(y_target - output)
+
+                diff_val += torch.sum(abs_tensor).item
+
+            return diff_val / len(self.__dataloader_test)
