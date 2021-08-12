@@ -36,7 +36,8 @@ class LinearRegressionModel:
                  learning_rate,
                  momentum,
                  randomize=False,
-                 device_name="cpu"):
+                 device_name="cpu",
+                 optimizer="sgd"):
 
         if device_name != "cpu" and device_name != "cuda":
             raise Exception("not a valid device")
@@ -75,7 +76,9 @@ class LinearRegressionModel:
 
         self.__optimizer = optim.SGD([self.__model.get_parameters()],
                                      lr=learning_rate,
-                                     momentum=momentum)
+                                     momentum=momentum
+                                     ) if optimizer == "sgd" else optim.Adam([self.__model.get_parameters()]
+                                                                             , lr=learning_rate)
 
     def predict(self, x_features: torch.Tensor):
         x_features = x_features.type(torch.DoubleTensor)
@@ -138,7 +141,6 @@ class LinearRegressionModel:
                               desc="Testing Linear Regression Model per batch",
                               unit="batch",
                               colour="blue"):
-
                 x_input, y_target = batch
                 x_input = x_input.to(self.__device)
                 y_target = y_target.to(self.__device)
