@@ -149,4 +149,4 @@ class LinearRegressionModel:
 
                 diff_val += torch.sum(abs_tensor).item()
 
-            return diff_val / len(self.__dataloader_test)
+            return diff_val / (len(self.__dataloader_test) * abs_tensor.size()[0])
