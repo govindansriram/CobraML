@@ -82,7 +82,7 @@ class LinearRegressionModel:
         x_features = x_features.to(self.__device)
 
         self.__model.eval()
-        self.__model.get_parameters().eval()
+        # self.__model.get_parameters().eval()
 
         with torch.no_grad():
             return self.__model(x_features)
@@ -91,7 +91,7 @@ class LinearRegressionModel:
                     epochs):
 
         self.__model.train()
-        self.__model.get_parameters().train()
+        # self.__model.get_parameters().train()
 
         loss_arr = []
         loss_fn = nn.MSELoss()
@@ -129,7 +129,7 @@ class LinearRegressionModel:
 
     def test_model(self):
         self.__model.eval()
-        self.__model.get_parameters().eval()
+        # self.__model.get_parameters().eval()
 
         diff_val = 0
 
