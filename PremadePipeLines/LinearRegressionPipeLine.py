@@ -1,10 +1,20 @@
 import torch
-from torch import nn
+from torch import nn, optim
 from tqdm import tqdm
-from torch import optim
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 from Regression.LinearModel import LinearRegression
+
+
+def get_loss(output: torch.DoubleTensor,
+             target: torch.DoubleTensor) -> dict[str, torch.tensor]:
+    loss_mse = nn.MSELoss()
+    loss_mae = nn.L1Loss()
+
+    mse_loss = loss_mse(output, target)
+
+    return {"mse": mse_loss,
+            "mae": loss_mae(output, target),
+            "rmse": torch.sqrt(mse_loss)}
 
 
 class LinearRegressionDataset(Dataset):
@@ -85,26 +95,31 @@ class LinearRegressionModel:
         x_features = x_features.to(self.__device)
 
         self.__model.eval()
-        # self.__model.get_parameters().eval()
-
         with torch.no_grad():
             return self.__model(x_features)
 
     def train_model(self,
-                    epochs):
+                    epochs: int) -> dict[str, torch.tensor]:
 
         self.__model.train()
-        # self.__model.get_parameters().train()
+
+        ret_loss_dict = {
+            "mse_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device),
+            "mae_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device),
+            "rmse_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device)
+        }
 
         loss_arr = []
-        loss_fn = nn.MSELoss()
+        # loss_fn = nn.MSELoss()
 
-        for _ in tqdm(range(epochs),
-                      desc="Training Linear Regression Model per epoch",
-                      unit="epochs",
-                      colour="green"):
+        for epoch in tqdm(range(epochs),
+                          desc="Training Linear Regression Model per epoch",
+                          unit="epochs",
+                          colour="green"):
 
-            epoch_loss = 0
+            mse_loss = 0
+            mae_loss = 0
+            rmse_loss = 0
 
             for batch in tqdm(self.__dataloader_train,
                               desc="Training Linear Regression Model per batch",
@@ -118,23 +133,32 @@ class LinearRegressionModel:
 
                 output = self.__model(x_input)
 
-                loss = loss_fn(output, y_target)
+                # loss = loss_fn(output, y_target)
 
-                loss.backward()
+                loss_dict = get_loss(output, y_target)
+
+                loss_dict["mse"].backward()
 
                 self.__optimizer.step()
 
-                epoch_loss += loss.item()
+                mse_loss += loss_dict["mse"].item()
+                mae_loss += loss_dict["mae"].item()
+                rmse_loss += loss_dict["rmse"].item()
 
-            loss_arr.append(epoch_loss / len(self.__dataloader_train))
+            ret_loss_dict["rmse_tensor"][epoch] = rmse_loss / len(self.__dataloader_train)
+            ret_loss_dict["mae_tensor"][epoch] = mae_loss / len(self.__dataloader_train)
+            ret_loss_dict["mse_tensor"][epoch] = mse_loss / len(self.__dataloader_train)
 
-        return loss_arr
+        return ret_loss_dict
 
-    def test_model(self):
+    def test_model(self) -> dict[str, torch.tensor]:
         self.__model.eval()
-        # self.__model.get_parameters().eval()
 
-        diff_val = 0
+        ret_loss_dict = {
+            "mse_loss": 0,
+            "mae_loss": 0,
+            "rmse_loss": 0
+        }
 
         with torch.no_grad():
             for batch in tqdm(self.__dataloader_test,
@@ -147,8 +171,14 @@ class LinearRegressionModel:
 
                 output = self.__model(x_input)
 
-                abs_tensor = torch.abs(y_target - output)
+                loss_dict = get_loss(output, y_target)
 
-                diff_val += torch.sum(abs_tensor).item()
+                ret_loss_dict["mse_loss"] += loss_dict["mse"].item()
+                ret_loss_dict["mae_loss"] += loss_dict["mae"].item()
+                ret_loss_dict["rmse_loss"] += loss_dict["rmse"].item()
 
-            return diff_val / (len(self.__dataloader_test) * abs_tensor.size()[0])
+            ret_loss_dict["mse_loss"] /= len(self.__dataloader_test)
+            ret_loss_dict["mae_loss"] /= len(self.__dataloader_test)
+            ret_loss_dict["rmse_loss"] /= len(self.__dataloader_test)
+
+            return ret_loss_dict
