@@ -114,9 +114,6 @@ class LinearRegressionModel:
             "rmse_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device)
         }
 
-        loss_arr = []
-        # loss_fn = nn.MSELoss()
-
         for epoch in tqdm(range(epochs),
                           desc="Training Linear Regression Model per epoch",
                           unit="epochs",
@@ -179,8 +176,8 @@ class LinearRegressionModel:
                 ret_loss_dict["mae_loss"] += torch.sum(torch.abs(output - y_target)).item()
                 ret_loss_dict["mse_loss"] += torch.sum(torch.square(output - y_target)).item()
 
-            ret_loss_dict["mae_loss"] /= (ret_loss_dict["mae_loss"] / self.__test_len)
-            ret_loss_dict["mse_loss"] /= (ret_loss_dict["mse_loss"] / self.__test_len)
+            ret_loss_dict["mae_loss"] /= self.__test_len
+            ret_loss_dict["mse_loss"] /= self.__test_len
             ret_loss_dict["rmse_loss"] += math.sqrt(ret_loss_dict["mse_loss"])
 
             #     loss_dict = get_loss(output, y_target)
