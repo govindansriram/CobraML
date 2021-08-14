@@ -16,9 +16,7 @@ def get_loss(output: torch.DoubleTensor,
 
     avg = torch.mean(target)
 
-    r_sqr_tp = torch.sum(torch.square(output - (torch.ones(size=output.size(),
-                                                           dtype=torch.float64,
-                                                           device=device) * avg)))
+    r_sqr_tp = torch.sum(torch.square(output - target))
 
     r_sqr_bt = torch.sum(torch.square(target - (torch.ones(size=output.size(),
                                                            dtype=torch.float64,
