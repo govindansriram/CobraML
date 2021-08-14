@@ -62,6 +62,9 @@ class LinearRegressionModel:
         if len(test_feature_tensor.size()) > 2 or len(test_target_tensor.size()) < 2:
             raise Exception("tensor shape should be 2-d")
 
+        self.__train_len = train_feature_tensor.size()[0]
+        self.__test_len = test_feature_tensor.size()[0]
+
         feature_tensor_train = train_feature_tensor.type(torch.DoubleTensor)
         target_tensor_train = train_target_tensor.type(torch.DoubleTensor)
 
@@ -176,8 +179,8 @@ class LinearRegressionModel:
                 ret_loss_dict["mae_loss"] += torch.sum(torch.abs(output - y_target)).item()
                 ret_loss_dict["mse_loss"] += torch.sum(torch.square(output - y_target)).item()
 
-            ret_loss_dict["mae_loss"] /= (ret_loss_dict["mae_loss"] / (len(self.__dataloader_test) * output.size()[0]))
-            ret_loss_dict["mse_loss"] /= (ret_loss_dict["mse_loss"] / (len(self.__dataloader_test) * output.size()[0]))
+            ret_loss_dict["mae_loss"] /= (ret_loss_dict["mae_loss"] / self.__test_len)
+            ret_loss_dict["mse_loss"] /= (ret_loss_dict["mse_loss"] / self.__test_len)
             ret_loss_dict["rmse_loss"] += math.sqrt(ret_loss_dict["mse_loss"])
 
             #     loss_dict = get_loss(output, y_target)
