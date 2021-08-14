@@ -1,3 +1,5 @@
+import math
+
 import torch
 from torch import nn, optim
 from tqdm import tqdm
@@ -171,14 +173,21 @@ class LinearRegressionModel:
 
                 output = self.__model(x_input)
 
-                loss_dict = get_loss(output, y_target)
+                ret_loss_dict["mae_loss"] += torch.sum(torch.abs(output - y_target)).item()
+                ret_loss_dict["mse_loss"] += torch.sum(torch.square(output - y_target)).item()
 
-                ret_loss_dict["mse_loss"] += loss_dict["mse"].item()
-                ret_loss_dict["mae_loss"] += loss_dict["mae"].item()
-                ret_loss_dict["rmse_loss"] += loss_dict["rmse"].item()
+            ret_loss_dict["mae_loss"] /= (ret_loss_dict["mae_loss"] / (len(self.__dataloader_test) * output.size()[0]))
+            ret_loss_dict["mse_loss"] /= (ret_loss_dict["mse_loss"] / (len(self.__dataloader_test) * output.size()[0]))
+            ret_loss_dict["rmse_loss"] += math.sqrt(ret_loss_dict["mse_loss"])
 
-            ret_loss_dict["mse_loss"] /= len(self.__dataloader_test)
-            ret_loss_dict["mae_loss"] /= len(self.__dataloader_test)
-            ret_loss_dict["rmse_loss"] /= len(self.__dataloader_test)
+            #     loss_dict = get_loss(output, y_target)
+            #
+            #     ret_loss_dict["mse_loss"] += loss_dict["mse"].item()
+            #     ret_loss_dict["mae_loss"] += loss_dict["mae"].item()
+            #     ret_loss_dict["rmse_loss"] += loss_dict["rmse"].item()
+            #
+            # ret_loss_dict["mse_loss"] /= len(self.__dataloader_test)
+            # ret_loss_dict["mae_loss"] /= len(self.__dataloader_test)
+            # ret_loss_dict["rmse_loss"] /= len(self.__dataloader_test)
 
             return ret_loss_dict
