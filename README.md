@@ -32,7 +32,7 @@ forward to community collaboration and input!
 ## How to contribute?
 
 
-**CobraML** If you wish to contribute to this library, please click on the following link. 
+If you wish to contribute to this library, please click on the following link. 
 All help is gladly welcome! https://docs.google.com/forms/d/e/1FAIpQLScv3zBQSVL38dib6_wxe1ABM5eY0rooMDx_gvXTiO7JuHyW4Q/viewform?usp=sf_link
 
 
