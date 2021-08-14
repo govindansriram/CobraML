@@ -25,7 +25,7 @@ def get_loss(output: torch.DoubleTensor,
     return {"mse": mse_loss,
             "mae": loss_mae(output, target),
             "rmse": torch.sqrt(mse_loss),
-            "r_squared": r_sqr_tp / r_sqr_bt}
+            "r_squared": 1 - r_sqr_tp / r_sqr_bt}
 
 
 class LinearRegressionDataset(Dataset):
