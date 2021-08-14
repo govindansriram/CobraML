@@ -185,13 +185,11 @@ class LinearRegressionModel:
                                                                           dtype=torch.float64,
                                                                           device=self.__device) * self.__test_avg)))
 
-                r_sqr_tp += torch.sum(torch.square(output - (torch.ones(size=output.size(),
-                                                                        dtype=torch.float64,
-                                                                        device=self.__device) * self.__test_avg)))
+                r_sqr_tp += torch.sum(torch.square(output - y_target))
 
             ret_loss_dict["mae_loss"] /= self.__test_len
             ret_loss_dict["mse_loss"] /= self.__test_len
             ret_loss_dict["rmse_loss"] += math.sqrt(ret_loss_dict["mse_loss"])
-            ret_loss_dict["r_squared"] += r_sqr_tp / r_sqr_bt
+            ret_loss_dict["r_squared"] += (1 - (r_sqr_tp / r_sqr_bt))
 
             return ret_loss_dict
