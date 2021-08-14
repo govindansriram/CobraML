@@ -8,15 +8,26 @@ from Regression.LinearModel import LinearRegression
 
 
 def get_loss(output: torch.DoubleTensor,
-             target: torch.DoubleTensor) -> dict[str, torch.tensor]:
+             target: torch.DoubleTensor,
+             device) -> dict[str, torch.tensor]:
     loss_mse = nn.MSELoss()
     loss_mae = nn.L1Loss()
-
     mse_loss = loss_mse(output, target)
+
+    avg = torch.mean(target)
+
+    r_sqr_tp = torch.sum(torch.square(output - (torch.ones(size=output.size(),
+                                                           dtype=torch.float64,
+                                                           device=device) * avg)))
+
+    r_sqr_bt = torch.sum(torch.square(target - (torch.ones(size=output.size(),
+                                                           dtype=torch.float64,
+                                                           device=device) * avg)))
 
     return {"mse": mse_loss,
             "mae": loss_mae(output, target),
-            "rmse": torch.sqrt(mse_loss)}
+            "rmse": torch.sqrt(mse_loss),
+            "r_squared": r_sqr_tp / r_sqr_bt}
 
 
 class LinearRegressionDataset(Dataset):
@@ -71,6 +82,8 @@ class LinearRegressionModel:
         feature_tensor_test = test_feature_tensor.type(torch.DoubleTensor)
         target_tensor_test = test_target_tensor.type(torch.DoubleTensor)
 
+        self.__test_avg = torch.mean(target_tensor_test).item()
+
         dataset_train = LinearRegressionDataset(feature_tensor_train,
                                                 target_tensor_train)
 
@@ -91,9 +104,8 @@ class LinearRegressionModel:
 
         self.__optimizer = optim.SGD([self.__model.get_parameters()],
                                      lr=learning_rate,
-                                     momentum=momentum
-                                     ) if optimizer == "sgd" else optim.Adam([self.__model.get_parameters()]
-                                                                             , lr=learning_rate)
+                                     momentum=momentum) if optimizer == "sgd" else optim.Adam([self.__model.get_parameters()],
+                                                                                              lr=learning_rate)
 
     def predict(self, x_features: torch.Tensor):
         x_features = x_features.type(torch.DoubleTensor)
@@ -104,29 +116,24 @@ class LinearRegressionModel:
             return self.__model(x_features)
 
     def train_model(self,
-                    epochs: int) -> dict[str, torch.tensor]:
+                    epochs: int) -> torch.Tensor:
 
         self.__model.train()
 
-        ret_loss_dict = {
-            "mse_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device),
-            "mae_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device),
-            "rmse_tensor": torch.zeros(epochs, dtype=torch.float64, device=self.__device)
-        }
+        loss_fn = nn.MSELoss()
+
+        loss_tensor = torch.zeros(size=(epochs,),
+                                  dtype=torch.float64,
+                                  device=self.__device)
 
         for epoch in tqdm(range(epochs),
-                          desc="Training Linear Regression Model per epoch",
+                          desc="Training Linear Regression Model",
                           unit="epochs",
                           colour="green"):
 
-            mse_loss = 0
-            mae_loss = 0
-            rmse_loss = 0
+            epoch_loss = 0
 
-            for batch in tqdm(self.__dataloader_train,
-                              desc="Training Linear Regression Model per batch",
-                              unit="batch",
-                              colour="blue"):
+            for batch in self.__dataloader_train:
                 self.__optimizer.zero_grad()
 
                 x_input, y_target = batch
@@ -135,23 +142,17 @@ class LinearRegressionModel:
 
                 output = self.__model(x_input)
 
-                # loss = loss_fn(output, y_target)
+                loss = loss_fn(output, y_target)
 
-                loss_dict = get_loss(output, y_target)
-
-                loss_dict["mse"].backward()
+                loss.backward()
 
                 self.__optimizer.step()
 
-                mse_loss += loss_dict["mse"].item()
-                mae_loss += loss_dict["mae"].item()
-                rmse_loss += loss_dict["rmse"].item()
+                epoch_loss += loss.item()
 
-            ret_loss_dict["rmse_tensor"][epoch] = rmse_loss / len(self.__dataloader_train)
-            ret_loss_dict["mae_tensor"][epoch] = mae_loss / len(self.__dataloader_train)
-            ret_loss_dict["mse_tensor"][epoch] = mse_loss / len(self.__dataloader_train)
+            loss_tensor[epoch] += (epoch_loss / len(self.__dataloader_train))
 
-        return ret_loss_dict
+        return loss_tensor
 
     def test_model(self) -> dict[str, torch.tensor]:
         self.__model.eval()
@@ -159,14 +160,18 @@ class LinearRegressionModel:
         ret_loss_dict = {
             "mse_loss": 0,
             "mae_loss": 0,
-            "rmse_loss": 0
+            "rmse_loss": 0,
+            "r_squared": 0
         }
+
+        r_sqr_tp = 0
+        r_sqr_bt = 0
 
         with torch.no_grad():
             for batch in tqdm(self.__dataloader_test,
-                              desc="Testing Linear Regression Model per batch",
+                              desc="Testing Linear Regression Model",
                               unit="batch",
-                              colour="blue"):
+                              colour="red"):
                 x_input, y_target = batch
                 x_input = x_input.to(self.__device)
                 y_target = y_target.to(self.__device)
@@ -176,18 +181,17 @@ class LinearRegressionModel:
                 ret_loss_dict["mae_loss"] += torch.sum(torch.abs(output - y_target)).item()
                 ret_loss_dict["mse_loss"] += torch.sum(torch.square(output - y_target)).item()
 
+                r_sqr_bt += torch.sum(torch.square(y_target - (torch.ones(size=output.size(),
+                                                                          dtype=torch.float64,
+                                                                          device=self.__device) * self.__test_avg)))
+
+                r_sqr_tp += torch.sum(torch.square(output - (torch.ones(size=output.size(),
+                                                                        dtype=torch.float64,
+                                                                        device=self.__device) * self.__test_avg)))
+
             ret_loss_dict["mae_loss"] /= self.__test_len
             ret_loss_dict["mse_loss"] /= self.__test_len
             ret_loss_dict["rmse_loss"] += math.sqrt(ret_loss_dict["mse_loss"])
-
-            #     loss_dict = get_loss(output, y_target)
-            #
-            #     ret_loss_dict["mse_loss"] += loss_dict["mse"].item()
-            #     ret_loss_dict["mae_loss"] += loss_dict["mae"].item()
-            #     ret_loss_dict["rmse_loss"] += loss_dict["rmse"].item()
-            #
-            # ret_loss_dict["mse_loss"] /= len(self.__dataloader_test)
-            # ret_loss_dict["mae_loss"] /= len(self.__dataloader_test)
-            # ret_loss_dict["rmse_loss"] /= len(self.__dataloader_test)
+            ret_loss_dict["r_squared"] += r_sqr_tp / r_sqr_bt
 
             return ret_loss_dict
