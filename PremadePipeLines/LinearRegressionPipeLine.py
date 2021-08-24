@@ -191,3 +191,6 @@ class LinearRegressionModel:
             ret_loss_dict["r_squared"] += (1 - (r_sqr_tp / r_sqr_bt))
 
             return ret_loss_dict
+
+    def get_params(self):
+        return self.__model.get_parameters()
