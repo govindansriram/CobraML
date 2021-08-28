@@ -2,7 +2,7 @@ import torch
 
 
 def add_extra_input(x_input: torch.FloatTensor,
-                    device: str) -> torch.Tensor:
+                    device) -> torch.Tensor:
     ones_arr = torch.ones((x_input.shape[0], 1),
                           dtype=torch.float64,
                           device=device)
