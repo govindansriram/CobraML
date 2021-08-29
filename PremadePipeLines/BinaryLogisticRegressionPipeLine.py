@@ -59,34 +59,34 @@ class BinaryLogisticRegression:
         self.__loss_fn = nn.BCELoss().to(device=self.__device)
 
         cut_off_num = round(len(feature_list) * train_split)
-        cut_off_num_two = cut_off_num + (len(feature_list) - cut_off_num) // 2
 
         train_feature_list = feature_list[0: cut_off_num]
         train_target_list = target_list[0: cut_off_num]
 
-        test_feature_list = feature_list[cut_off_num: cut_off_num_two]
-        test_target_list = target_list[cut_off_num: cut_off_num_two]
-
-        self.__val_feature_tensor = feature_list[cut_off_num_two: len(feature_list)]
-        self.__val_target_tensor = target_list[cut_off_num_two: len(feature_list)]
+        test_feature_list = feature_list[cut_off_num: len(feature_list)]
+        test_target_list = target_list[cut_off_num: len(feature_list)]
 
         data_set = LogisticRegressionDataset(torch.tensor(train_feature_list,
                                                           device=self.__device,
-                                                          dtype=torch.float),
+                                                          dtype=torch.float64),
                                              torch.tensor(train_target_list,
                                                           device=self.__device,
-                                                          dtype=torch.float))
+                                                          dtype=torch.float64))
 
-        self.__train_data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=True)
+        self.__train_data_loader = DataLoader(data_set,
+                                              batch_size=batch_size,
+                                              shuffle=True)
 
         data_set = LogisticRegressionDataset(torch.tensor(test_feature_list,
                                                           device=self.__device,
-                                                          dtype=torch.float),
+                                                          dtype=torch.float64),
                                              torch.tensor(test_target_list,
                                                           device=self.__device,
-                                                          dtype=torch.float))
+                                                          dtype=torch.float64))
 
-        self.__test_data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=True)
+        self.__test_data_loader = DataLoader(data_set,
+                                             batch_size=batch_size,
+                                             shuffle=True)
 
         self.__model = LogisticRegression(len(train_feature_list[0]),
                                           device=device_name,
@@ -104,7 +104,7 @@ class BinaryLogisticRegression:
             self.__optimizer = optim.LBFGS([self.__model.get_parameters()],
                                            lr=learning_rate)
 
-    def fit_model(self, epochs: int) -> list[dict[str, float]]:
+    def fit_model(self, epochs: int) -> list[dict[str, torch.Tensor]]:
         loss_list = []
 
         for epoch in range(epochs):
@@ -135,7 +135,7 @@ class BinaryLogisticRegression:
 
         return loss_list
 
-    def __test_model(self) -> dict[str, float]:
+    def __test_model(self) -> dict[str, torch.Tensor]:
 
         with torch.no_grad():
             self.__model.eval()
@@ -151,25 +151,11 @@ class BinaryLogisticRegression:
 
                 output = self.__model(feature_tensor)
 
-                loss = self.__loss_fn(output.to(self.__device).type(torch.DoubleTensor), target_tensor.to(self.__device).type(torch.DoubleTensor))
+                loss = self.__loss_fn(output.to(self.__device).float(), target_tensor.to(self.__device).float())
 
                 eq_count = torch.sum(torch.eq(torch.round(output), target_tensor))
 
                 loss_tensor[0][idx] = loss.item()
                 eq_tensor[0][idx] = eq_count.item() / target_tensor.size()[0]
 
-            return {"test_loss": torch.mean(loss_tensor).item(), "test_acc": torch.mean(eq_tensor).item()}
-
-    def validate_model(self) -> float:
-        with torch.no_grad():
-            self.__model.eval()
-            feature_tensor = torch.tensor(self.__val_feature_tensor,
-                                          device=self.__device).type(torch.DoubleTensor)
-            target_tensor = torch.tensor(self.__val_target_tensor,
-                                         device=self.__device).type(torch.DoubleTensor)
-
-            output = self.__model(feature_tensor.to(self.__device))
-
-            eq_count = torch.sum(torch.eq(torch.round(output), target_tensor.to(self.__device)))
-
-            return (eq_count / len(self.__val_feature_tensor)).item()
+            return {"test_loss": torch.mean(loss_tensor), "test_acc": torch.mean(eq_tensor)}
