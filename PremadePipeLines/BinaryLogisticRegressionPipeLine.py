@@ -54,9 +54,9 @@ class BinaryLogisticRegression:
         feature_list = list(feature_list)
         target_list = list(target_list)
 
-        self.__loss_fn = nn.BCELoss()
-
         self.__device = torch.device(device_name)
+
+        self.__loss_fn = nn.BCELoss().to(device=self.__device)
 
         cut_off_num = round(len(feature_list) * train_split)
         cut_off_num_two = cut_off_num + (len(feature_list) - cut_off_num) // 2
@@ -71,16 +71,20 @@ class BinaryLogisticRegression:
         self.__val_target_tensor = target_list[cut_off_num_two: len(feature_list)]
 
         data_set = LogisticRegressionDataset(torch.tensor(train_feature_list,
-                                                          device=self.__device).type(torch.DoubleTensor),
+                                                          device=self.__device,
+                                                          dtype=torch.float),
                                              torch.tensor(train_target_list,
-                                                          device=self.__device).type(torch.DoubleTensor))
+                                                          device=self.__device,
+                                                          dtype=torch.float))
 
         self.__train_data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=True)
 
         data_set = LogisticRegressionDataset(torch.tensor(test_feature_list,
-                                                          device=self.__device).type(torch.DoubleTensor),
+                                                          device=self.__device,
+                                                          dtype=torch.float),
                                              torch.tensor(test_target_list,
-                                                          device=self.__device).type(torch.DoubleTensor))
+                                                          device=self.__device,
+                                                          dtype=torch.float))
 
         self.__test_data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=True)
 
@@ -100,30 +104,36 @@ class BinaryLogisticRegression:
             self.__optimizer = optim.LBFGS([self.__model.get_parameters()],
                                            lr=learning_rate)
 
-    def fit_model(self, epochs: int) -> tuple[list, [dict[str: float]]]:
-
-        train_loss_list = []
-        test_loss_list = []
+    def fit_model(self, epochs: int) -> list[dict[str, float]]:
+        loss_list = []
 
         for epoch in range(epochs):
+
             if isinstance(self.__optimizer, optim.LBFGS):
                 train_loss = train_one_epoch_lbfgs(self.__model,
                                                    self.__optimizer,
                                                    self.__train_data_loader,
-                                                   self.__loss_fn)
+                                                   self.__loss_fn,
+                                                   self.__device)
 
             else:
                 train_loss = train_one_epoch(self.__model,
                                              self.__optimizer,
                                              self.__train_data_loader,
-                                             self.__loss_fn)
+                                             self.__loss_fn,
+                                             self.__device)
 
             test_loss = self.__test_model()
 
-            train_loss_list.append(train_loss)
-            test_loss_list.append(test_loss)
+            ret_loss = {
+                "train_loss": train_loss,
+                "test_loss": test_loss["test_loss"],
+                "test_acc": test_loss["test_acc"]
+            }
 
-        return train_loss_list, test_loss_list
+            loss_list.append(ret_loss)
+
+        return loss_list
 
     def __test_model(self) -> dict[str, float]:
 
@@ -136,9 +146,12 @@ class BinaryLogisticRegression:
             for idx, batch in enumerate(self.__test_data_loader):
                 feature_tensor, target_tensor = batch
 
+                feature_tensor = feature_tensor.to(self.__device)
+                target_tensor = target_tensor.to(self.__device)
+
                 output = self.__model(feature_tensor)
 
-                loss = self.__loss_fn(output.type(torch.DoubleTensor), target_tensor)
+                loss = self.__loss_fn(output.to(self.__device).type(torch.DoubleTensor), target_tensor.to(self.__device).type(torch.DoubleTensor))
 
                 eq_count = torch.sum(torch.eq(torch.round(output), target_tensor))
 
@@ -155,8 +168,8 @@ class BinaryLogisticRegression:
             target_tensor = torch.tensor(self.__val_target_tensor,
                                          device=self.__device).type(torch.DoubleTensor)
 
-            output = self.__model(feature_tensor)
+            output = self.__model(feature_tensor.to(self.__device))
 
-            eq_count = torch.sum(torch.eq(torch.round(output), target_tensor))
+            eq_count = torch.sum(torch.eq(torch.round(output), target_tensor.to(self.__device)))
 
             return (eq_count / len(self.__val_feature_tensor)).item()
