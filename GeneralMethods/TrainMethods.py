@@ -38,6 +38,7 @@ def train_one_epoch(model: torch.nn.Module,
                     train_data_loader: DataLoader,
                     loss_fn: Union[torch.nn.MSELoss, torch.nn.BCELoss],
                     device: torch.device) -> torch.Tensor:
+
     model.train()
 
     loss_tensor = torch.zeros(size=[1, len(train_data_loader)],
