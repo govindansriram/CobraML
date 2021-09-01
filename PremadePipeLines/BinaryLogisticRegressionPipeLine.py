@@ -1,33 +1,16 @@
 import torch
 from torch import nn, optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from Classification.LogisticModel import LogisticRegression
 from GeneralMethods.TrainMethods import train_one_epoch
-
-
-class LogisticRegressionDataset(Dataset):
-
-    def __init__(self,
-                 x_inputs: torch.Tensor,
-                 y_targets: torch.Tensor):
-        if x_inputs.size()[0] != y_targets.size()[0]:
-            raise Exception("row count of input does not match targets")
-
-        self.__inputs = x_inputs
-        self.__targets = y_targets
-
-    def __len__(self):
-        return len(self.__inputs)
-
-    def __getitem__(self, idx):
-        return self.__inputs[idx], self.__targets[idx]
+from GeneralMethods.GeneralDataset import GenericDataSet
 
 
 class BinaryLogisticRegression:
 
     def __init__(self,
                  feature_data: list[list[float]],
-                 target_data: list[list[int]],
+                 target_data: list[int],
                  batch_size: int,
                  learning_rate: float,
                  device_name="cpu"):
@@ -35,23 +18,19 @@ class BinaryLogisticRegression:
 
         self.__loss_fn = nn.BCELoss().to(device=self.__device)
 
-        data_set = LogisticRegressionDataset(torch.tensor(feature_data,
-                                                          device=self.__device,
-                                                          dtype=torch.float64),
-                                             torch.tensor(target_data,
-                                                          device=self.__device,
-                                                          dtype=torch.float64))
+        data_set = GenericDataSet(torch.tensor(feature_data, dtype=torch.float),
+                                  torch.tensor(target_data, dtype=torch.float))
 
-        self.__train_data_loader = DataLoader(data_set,
-                                              batch_size=batch_size,
-                                              shuffle=True)
+        self.__data_loader = DataLoader(data_set,
+                                        batch_size=batch_size,
+                                        shuffle=True)
 
-        self.__model = LogisticRegression(len(feature_data[0]), self.__device).to(self.__device)
+        self.__model = LogisticRegression(len(feature_data[0])).to(self.__device)
 
         self.__optimizer = optim.Adam(self.__model.parameters(),
                                       lr=learning_rate)
 
-    def fit_model(self, epochs: int) -> torch.Tensor:
+    def fit_model(self, epochs: int) -> torch.tensor:
         mean_epoch_loss = torch.zeros(size=(1, epochs),
                                       dtype=torch.float64,
                                       device=self.__device)
@@ -59,7 +38,7 @@ class BinaryLogisticRegression:
         for epoch in range(epochs):
             train_loss = train_one_epoch(self.__model,
                                          self.__optimizer,
-                                         self.__train_data_loader,
+                                         self.__data_loader,
                                          self.__loss_fn,
                                          self.__device)
 
@@ -69,12 +48,16 @@ class BinaryLogisticRegression:
 
     def evaluate_model(self,
                        feature_tensor: list[list[float]],
-                       target_tensor: list[list[int]]) -> torch.Tensor:
+                       target_tensor: list[int]) -> torch.tensor:
         self.__model.eval()
         with torch.no_grad():
+            feature_tensor = torch.tensor(feature_tensor,
+                                          dtype=torch.float,
+                                          device=self.__device)
 
-            feature_tensor = torch.tensor(feature_tensor, dtype=torch.float64, device=self.__device)
-            target_tensor = torch.tensor(target_tensor, dtype=torch.float64, device=self.__device)
+            target_tensor = torch.tensor(target_tensor,
+                                         dtype=torch.long,
+                                         device=self.__device)
 
             output = self.__model(feature_tensor)
 

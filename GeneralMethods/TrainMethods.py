@@ -34,9 +34,12 @@ def train_one_epoch_lbfgs(model: torch.nn.Module,
 
 
 def train_one_epoch(model: torch.nn.Module,
-                    optimizer: Union[torch.optim.Adam, torch.optim.SGD],
+                    optimizer: Union[torch.optim.Adam,
+                                     torch.optim.SGD],
                     train_data_loader: DataLoader,
-                    loss_fn: Union[torch.nn.MSELoss, torch.nn.BCELoss],
+                    loss_fn: Union[torch.nn.MSELoss,
+                                   torch.nn.BCELoss,
+                                   torch.nn.CrossEntropyLoss],
                     device: torch.device) -> torch.Tensor:
 
     model.train()
@@ -54,7 +57,7 @@ def train_one_epoch(model: torch.nn.Module,
 
         output = model(feature_tensor)
 
-        loss = loss_fn(output.float().to(device), target_tensor.float())
+        loss = loss_fn(output, target_tensor)
 
         loss.backward()
 

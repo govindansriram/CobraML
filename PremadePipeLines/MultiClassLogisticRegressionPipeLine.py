@@ -1,5 +1,9 @@
 import torch
-from PremadePipeLines.BinaryLogisticRegressionPipeLine import BinaryLogisticRegression
+import torch.nn.functional as F
+from Classification.MultiClassLogisticModel import MultiClassLogisticRegression as MCLR
+from GeneralMethods.GeneralDataset import GenericDataSet
+from GeneralMethods.TrainMethods import train_one_epoch
+from torch.utils.data import DataLoader
 
 
 class MultiClassLogisticRegression:
@@ -9,59 +13,50 @@ class MultiClassLogisticRegression:
                  target_data: list[list[int]],
                  batch_size: int,
                  learning_rate: float,
-                 epochs: int,
+                 num_output_classes: int,
                  device_name="cpu"):
-
         self.__device = torch.device(device_name)
+        self.__loss_fn = torch.nn.CrossEntropyLoss().to(self.__device)
+        self.__model = MCLR(len(feature_data[0]), num_output_classes).to(self.__device)
+        self.__optimizer = torch.optim.Adam(self.__model.parameters(), lr=learning_rate)
 
-        target_tensor = torch.tensor(target_data,
-                                     device=self.__device,
-                                     dtype=torch.float64)
+        data_set = GenericDataSet(torch.tensor(feature_data, dtype=torch.float),
+                                  torch.tensor(target_data, dtype=torch.long))
 
-        unique = torch.unique(torch.unsqueeze(target_tensor, dim=1))
+        self.__data_loader = DataLoader(data_set, batch_size, shuffle=True)
 
-        unique = unique.type(torch.IntTensor)
+    def fit_model(self, epochs: int):
+        mean_epoch_loss = torch.zeros(size=(1, epochs),
+                                      dtype=torch.float,
+                                      device=self.__device)
 
-        self.__model_dict_list = []
+        for epoch in range(epochs):
+            train_loss = train_one_epoch(self.__model,
+                                         self.__optimizer,
+                                         self.__data_loader,
+                                         self.__loss_fn,
+                                         self.__device)
 
-        for value in unique:
+            mean_epoch_loss[0][epoch] += train_loss
 
-            for i in range(target_tensor.size()[0]):
-                target_tensor[i][0] = 1 if target_tensor[i][0] == value else 0
-
-            current_model = BinaryLogisticRegression(feature_data,
-                                                     target_tensor.tolist(),
-                                                     batch_size,
-                                                     learning_rate,
-                                                     device_name=device_name)
-
-            loss = current_model.fit_model(epochs)
-
-            self.__model_dict_list.append({"model": current_model,
-                                           "class": value})
-
-        self.__model_dict_list.sort(key=lambda x: x["class"])
+        return mean_epoch_loss
 
     def validate_model(self,
                        feature_data: list[list[float]],
-                       target_data: list[list[int]], ) -> torch.Tensor:
-
+                       target_data: list[list[int]]) -> torch.Tensor:
         with torch.no_grad():
-            feature_tensor = torch.tensor(feature_data, dtype=torch.float64, device=self.__device)
-            target_tensor = torch.tensor(target_data, dtype=torch.float64, device=self.__device)
-            output = self.__model_dict_list[0]["model"].get_model()(feature_tensor)
+            feature_tensor = torch.tensor(feature_data,
+                                          dtype=torch.float,
+                                          device=self.__device)
 
-            for model_dict in self.__model_dict_list[1:]:
-                new_output = model_dict["model"].get_model()(feature_tensor)
-                output = torch.cat((output, new_output), dim=1)
+            target_tensor = torch.tensor(target_data,
+                                         dtype=torch.int,
+                                         device=self.__device)
+
+            output = F.log_softmax(self.__model(feature_tensor), dim=1)
 
             index_tensor = torch.unsqueeze(torch.max(output, dim=1)[1], dim=1)
-            eq_count = torch.sum(torch.eq(index_tensor, target_tensor))
 
-            print(index_tensor[:10, :])
-            print('\n')
-            print(output[:10, :])
-            print('\n')
-            print(target_tensor[:10, :])
+            eq_count = torch.sum(torch.eq(index_tensor, torch.unsqueeze(target_tensor, dim=1)))
 
             return eq_count / target_tensor.size()[0]
