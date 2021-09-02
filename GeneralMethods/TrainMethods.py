@@ -6,7 +6,9 @@ from torch.utils.data import DataLoader
 def train_one_epoch_lbfgs(model: torch.nn.Module,
                           optimizer: torch.optim.LBFGS,
                           train_data_loader: DataLoader,
-                          loss_fn: Union[torch.nn.MSELoss, torch.nn.BCELoss],
+                          loss_fn: Union[torch.nn.MSELoss,
+                                         torch.nn.CrossEntropyLoss,
+                                         torch.nn.BCELoss],
                           device: torch.device) -> torch.Tensor:
     model.train()
 
@@ -41,7 +43,6 @@ def train_one_epoch(model: torch.nn.Module,
                                    torch.nn.BCELoss,
                                    torch.nn.CrossEntropyLoss],
                     device: torch.device) -> torch.Tensor:
-
     model.train()
 
     loss_tensor = torch.zeros(size=[1, len(train_data_loader)],

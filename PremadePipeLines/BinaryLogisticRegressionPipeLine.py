@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from Classification.LogisticModel import LogisticRegression
 from GeneralMethods.TrainMethods import train_one_epoch, train_one_epoch_lbfgs
 from GeneralMethods.GeneralDataset import GenericDataSet
+from GeneralMethods.GeneralOptimizer import get_optimizer
 
 
 class BinaryLogisticRegression:
@@ -42,29 +43,22 @@ class BinaryLogisticRegression:
 
         self.__model = LogisticRegression(len(feature_data[0])).to(self.__device)
 
-        if optimizer_name == "ADAM":
-            self.__optimizer = optim.Adam(self.__model.parameters(),
-                                          lr=learning_rate,
-                                          betas=betas,
-                                          eps=eps,
-                                          weight_decay=weight_decay,
-                                          amsgrad=amsgrad)
-        elif optimizer_name == "SGD":
-            self.__optimizer = optim.SGD(self.__model.parameters(),
-                                         lr=learning_rate,
+        self.__optimizer = get_optimizer(self.__model,
+                                         learning_rate,
+                                         optimizer_name=optimizer_name,
+                                         betas=betas,
+                                         eps=eps,
+                                         amsgrad=amsgrad,
                                          momentum=momentum,
                                          weight_decay=weight_decay,
                                          dampening=dampening,
-                                         nesterov=nesterov)
-        elif optimizer_name == "LBFGS":
-            self.__optimizer = torch.optim.LBFGS(self.__model.parameters(),
-                                                 lr=learning_rate,
-                                                 max_iter=max_iter,
-                                                 max_eval=max_eval,
-                                                 tolerance_grad=tolerance_grad,
-                                                 tolerance_change=tolerance_change,
-                                                 history_size=history_size,
-                                                 line_search_fn=line_search_fn)
+                                         nesterov=nesterov,
+                                         max_iter=max_iter,
+                                         max_eval=max_eval,
+                                         tolerance_grad=tolerance_grad,
+                                         tolerance_change=tolerance_change,
+                                         history_size=history_size,
+                                         line_search_fn=line_search_fn)
 
     def fit_model(self, epochs: int) -> torch.tensor:
         mean_epoch_loss = torch.zeros(size=(1, epochs),
