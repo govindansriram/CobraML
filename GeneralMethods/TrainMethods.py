@@ -21,7 +21,7 @@ def train_one_epoch_lbfgs(model: torch.nn.Module,
         def closure():
             optimizer.zero_grad()
             output = model(feature_tensor)
-            loss = loss_fn(output.float(), target_tensor.float())
+            loss = loss_fn(output, target_tensor)
             loss.backward()
             return loss
 
