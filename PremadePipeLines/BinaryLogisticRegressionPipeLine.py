@@ -1,5 +1,5 @@
 import torch
-from torch import nn, optim
+from torch import nn
 from torch.utils.data import DataLoader
 from Classification.LogisticModel import LogisticRegression
 from GeneralMethods.TrainMethods import train_one_epoch, train_one_epoch_lbfgs
