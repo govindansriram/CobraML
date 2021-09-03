@@ -3,9 +3,5 @@
 /.idea
 __pycache__/
 
-# Driver Files
-Driver.py
-Driver2.py
-Driver3.py
-Driver4.py
-
+TestLog.py
+MnistTest.py
