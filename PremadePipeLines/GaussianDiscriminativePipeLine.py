@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+from GeneralMethods.StatsMethods import multivariate_normal_distribution
 
 
 class BinaryGDA:
@@ -27,7 +28,6 @@ class BinaryGDA:
                                                 dtype=torch.float64,
                                                 device=self.__device)
         self.__fi = 0
-
         self.__total_count = 0
 
     def train(self):
@@ -72,7 +72,7 @@ class BinaryGDA:
 
             for feature_vector, target_tensor in batch:
 
-                if target_tensor[0] is 0:
+                if target_tensor[0] == 0:
                     sigma = feature_vector - self.__mu_zero_vector
                 else:
                     sigma = feature_vector - self.__mu_one_vector
@@ -83,10 +83,6 @@ class BinaryGDA:
 
 
 if __name__ == '__main__':
-    mean_tensor = torch.tensor([[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]])
-    mean_tensor_2 = torch.tensor([[5.0, 6.0, 7.0, 8.0], [5.0, 6.0, 7.0, 8.0]])
+    test_ten = torch.tensor([1, 1, 2])
 
-    m_t_1 = torch.unsqueeze(torch.sum(mean_tensor, dim=0), dim=0).T
-    m_t_2 = torch.unsqueeze(torch.sum(mean_tensor_2, dim=0), dim=0).T
-
-    print(torch.cat((m_t_1, m_t_2), dim=1))
+    print(1 / test_ten)
