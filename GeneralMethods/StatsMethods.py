@@ -1,6 +1,10 @@
 import numpy as np
 import torch
 
+"""
+This method follow the formula of multivariate normal distribution which can be easily googled.
+"""
+
 
 def multivariate_normal_distribution(feature: torch.Tensor,
                                      mu: torch.Tensor,
