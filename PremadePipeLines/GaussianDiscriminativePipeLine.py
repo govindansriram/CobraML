@@ -64,12 +64,12 @@ class BinaryGDA:
             self.__mu_one_vector += one_sum
             self.__mu_zero_vector += zero_sum
 
-        self.__fi = one_count / (one_count + zero_count)
+        self.__total_count = one_count + zero_count
+
+        self.__fi = one_count / self.__total_count
 
         self.__mu_one_vector /= one_count
         self.__mu_zero_vector /= zero_count
-
-        self.__total_count = one_count + zero_count
 
         self.__make_covariance_matrix()
 
@@ -93,3 +93,39 @@ class BinaryGDA:
                 self.__co_variance_matrix += torch.mm(sigma, sigma.T)
 
         self.__co_variance_matrix /= self.__total_count
+
+    def test_model(self,
+                   feature_matrix: list[list[float]],
+                   target_list: list[int]) -> torch.Tensor:
+
+        target_tensor = torch.tensor(data=target_list,
+                                     dtype=torch.int64,
+                                     device=self.__device)
+
+        pred_tensor = torch.zeros(size=target_tensor.size(),
+                                  dtype=torch.int64,
+                                  device=self.__device)
+
+        for idx, feature_vector in enumerate(feature_matrix):
+            pred_tensor[idx] += self.make_prediction(feature_vector)
+
+        return torch.sum(torch.eq(pred_tensor, target_tensor)) / target_tensor.size()[0]
+
+    def make_prediction(self, feature_vector: list[float]) -> int:
+
+        feature_tensor = torch.tensor(data=feature_vector,
+                                      dtype=torch.float64,
+                                      device=self.__device)
+
+        one_mnd = multivariate_normal_distribution(feature_tensor,
+                                                   self.__mu_one_vector,
+                                                   self.__co_variance_matrix)
+
+        zero_mnd = multivariate_normal_distribution(feature_tensor,
+                                                    self.__mu_zero_vector,
+                                                    self.__co_variance_matrix)
+
+        one_pred = self.__fi * one_mnd
+        zero_pred = (1 - self.__fi) * zero_mnd
+
+        return 1 if one_pred > zero_pred else 0
