@@ -7,7 +7,7 @@ from GeneralMethods.StatsMethods import multivariate_normal_distribution
 class BinaryGDA:
     """
     Initializes Mu of 0 as a 0 vector. Mu of 0 is the mean value of all the features which have a target of 0.
-    Initializes Mu of 1 as a 1 vector. Mu of 1 is the mean value of all the features which have a target of 1.
+    Initializes Mu of 1 as a 0 vector. Mu of 1 is the mean value of all the features which have a target of 1.
     Initializes the covariance matrix(a.k.a sigma) as a 0 matrix of size n x n, n is the amount of features present
     which is the same as the length of either mu vector. Sets fi to be currently 0, fi is simply the percent of data
     samples that are 1. Sets the total count to zero since that will be computed later on.
