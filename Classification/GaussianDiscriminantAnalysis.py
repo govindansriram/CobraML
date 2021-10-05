@@ -1,5 +1,4 @@
 import torch
-from GeneralMethods.StatsMethods import multivariate_normal_distribution
 
 
 class GaussianDiscriminantAnalysis:
@@ -7,11 +6,11 @@ class GaussianDiscriminantAnalysis:
     def __init__(self,
                  class_count: int,
                  feature_count: int):
+        self.__device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.__class_count = class_count
         self.__feature_count = feature_count
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.__device = torch.device(device=device)
+        self.__device = torch.device(device=self.__device)
 
         self.__mu_matrix = torch.zeros(size=(feature_count, class_count),
                                        dtype=torch.float64,
@@ -44,7 +43,7 @@ class GaussianDiscriminantAnalysis:
 
     def fit_variables(self):
         for i in range(self.__class_count):
-            self.__mu_matrix[:, i] /= self.__fi_vector[1, i]
+            self.__mu_matrix[:, i] /= self.__fi_vector[0][i]
 
         fi_sum = torch.sum(self.__fi_vector)
         self.__total_count += fi_sum
@@ -59,9 +58,19 @@ class GaussianDiscriminantAnalysis:
                                  dim=1)
 
         for vector in joint_tensor:
-            i = vector[self.__feature_count, self.__feature_count+1]
-            sigma = (vector[:self.__feature_count] - self.__mu_matrix[:, i]).T
+            i = int(vector[self.__feature_count].item())
+            sigma = torch.unsqueeze(vector[:self.__feature_count] - self.__mu_matrix[:, i], dim=1)
             self.__covariance_matrix += torch.mm(sigma, sigma.T)
 
+    def fit_covariance_matrix(self):
+        self.__covariance_matrix /= self.__total_count
+        print(self.__covariance_matrix.size())
 
+    def get_mu_matrix(self):
+        return self.__mu_matrix
 
+    def get_covariance_matrix(self):
+        return self.__covariance_matrix
+
+    def get_fi_vector(self):
+        return self.__fi_vector
