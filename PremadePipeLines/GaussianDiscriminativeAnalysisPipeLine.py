@@ -9,7 +9,7 @@ class GDA:
 
     def __init__(self,
                  feature_data: list[list[float]],
-                 target_data: list[int],
+                 target_data: list[list[int]],
                  num_of_classes: int,
                  batch_size: int):
 
