@@ -15,14 +15,19 @@ class NaiveBayes:
         self.__count_matrix = torch.zeros(size=(feature_count, class_count),
                                           device=self.__device)
 
-    def get_class_sum_tensor(self):
+    def get_device(self):
+        return self.__device
+
+    def set_count_matrix(self,
+                         count_matrix: torch.Tensor):
+
+        self.__count_matrix = count_matrix
+
+    def get_class_sum_tensor(self) -> torch.Tensor:
         return self.__class_sum_tensor
 
-    def get_count_matrix(self):
+    def get_count_matrix(self) -> torch.Tensor:
         return self.__count_matrix
-
-    def get_feature_count(self):
-        return self.__feature_count
 
     def forward(self,
                 features: torch.Tensor,
