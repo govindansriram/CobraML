@@ -63,12 +63,12 @@ class BernoulliNaiveBayes(NaiveBayes):
 
         feature_tensor = torch.unsqueeze(feature_vector, dim=1)
 
-        full_mat = torch.cat((self.get_count_matrix(), feature_tensor), dim=1)
+        full_mat = torch.cat((self.__prob_matrix, feature_tensor), dim=1)
 
         tensor_mask = (full_mat[:, self.get_class_sum_tensor().size()[0]] == 1)
 
-        one_mat = full_mat[tensor_mask]
-        zero_mat = full_mat[~tensor_mask]
+        one_mat = full_mat[tensor_mask][:, self.get_class_sum_tensor().size()[0] - 1]
+        zero_mat = full_mat[~tensor_mask][:, self.get_class_sum_tensor().size()[0] - 1]
 
         log_tensor += torch.sum(torch.log(one_mat), dim=0)
 
