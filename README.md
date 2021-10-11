@@ -26,12 +26,14 @@ forward to community collaboration and input!
 
 ## Progress
 
-
-**CobraML** is in it's extremely early stages with only a few algorithms ready for production, and is thus not ready for release.
+Implemented Algorithms
+- Linear Regression
+- Logistic Regression
+- Gaussian Discriminant Analysis
+- Bernoulli Naive Bayes
+- Multinomial Naive Bayes
 
 ## How to contribute?
-
-
 If you wish to contribute to this library, please click on the following link. 
 All help is gladly welcome! https://docs.google.com/forms/d/e/1FAIpQLScv3zBQSVL38dib6_wxe1ABM5eY0rooMDx_gvXTiO7JuHyW4Q/viewform?usp=sf_link
 
