@@ -7,12 +7,14 @@ ____
 # CobraML: ML for everyone
 ## What is it?
 
-**CobraML** is a automl software built on top of the PyTorch framework, 
+**CobraML** is a AutoML software built on top of the PyTorch framework, 
 designed to give users familiar and unfamiliar with ml easy access 
-to a whole plethora of ML models, which are trainable on the gpu.
+to a whole plethora of ML models. 
   
 - **CobraML** is completely open source and in the future we are looking 
 forward to community collaboration and input!
+- All **CobraML** models are trainable via the gpu!
+
 
 ## Progress
 
