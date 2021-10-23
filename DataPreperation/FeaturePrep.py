@@ -45,14 +45,6 @@ def consistent_col(df: pd.DataFrame,
     return df.reset_index(drop=True)
 
 
-def convert_columns(df: pd.DataFrame):
-    for column in list(df.columns):
-        df = consistent_col(df,
-                            column)
-
-    return df
-
-
 def get_codes(series: pd.Series):
 
     key_df = pd.concat([series, series.cat.codes], axis=1)
@@ -64,20 +56,3 @@ def get_codes(series: pd.Series):
         full_dict.update({data[0]: data[1]})
 
     return full_dict
-
-
-if __name__ == '__main__':
-    dataframe = pd.read_csv(filepath_or_buffer="D:/DataSets/Amazon/archive/kindle_reviews.csv")
-
-    dataframe = dataframe.drop(columns=["Unnamed: 0",
-                                        "helpful",
-                                        "reviewTime"])
-
-    conv_df = convert_columns(dataframe)
-
-    column_list = list(conv_df.select_dtypes('category').columns)
-
-    for column in column_list:
-        print(len(get_codes(conv_df[column])))
-
-    # conv_df = convert_categories(conv_df)
